@@ -1,1 +1,220 @@
 
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pokémon Auto-Farm Bot</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Tela 0: Autenticação -->
+  <div id="tela-login" class="tela ativa">
+    <h2>Pokémon Auto-Farm</h2>
+    <div class="container-login">
+      <div class="abas-auth">
+        <button id="aba-entrar" class="btn-aba ativa" onclick="mudarAbaAuth('entrar')">Entrar</button>
+        <button id="aba-criar" class="btn-aba" onclick="mudarAbaAuth('criar')">Criar Conta</button>
+      </div>
+
+      <form id="form-entrar" onsubmit="realizarLogin(event)">
+        <div class="campo-input">
+          <label for="login-usuario">Nome de Utilizador:</label>
+          <input type="text" id="login-usuario" required placeholder="Digite seu utilizador">
+        </div>
+        <div class="campo-input">
+          <label for="login-senha">Palavra-passe:</label>
+          <input type="password" id="login-senha" required placeholder="Digite sua palavra-passe">
+        </div>
+        <button type="submit" class="btn-iniciar">Entrar na Conta</button>
+      </form>
+
+      <form id="form-criar" class="escondido" onsubmit="realizarCadastro(event)">
+        <div class="campo-input">
+          <label for="cad-usuario">Nome de Utilizador:</label>
+          <input type="text" id="cad-usuario" required placeholder="Escolha um utilizador">
+        </div>
+        <div class="campo-input">
+          <label for="cad-senha">Palavra-passe:</label>
+          <input type="password" id="cad-senha" required placeholder="Crie uma palavra-passe">
+        </div>
+        <button type="submit" class="btn-iniciar">Criar Conta e Iniciar</button>
+      </form>
+      
+      <p id="msg-auth" class="msg-erro"></p>
+    </div>
+  </div>
+
+  <!-- Tela 1: Escolha do Time Inicial -->
+  <div id="tela-time" class="tela">
+    <div class="cabecalho-usuario">
+      <span>Utilizador: <strong id="nome-usuario-hud">-</strong></span>
+      <button class="btn-sair" onclick="sairDaConta()">Sair / Trocar Conta</button>
+    </div>
+    <h2>Escolha até 3 Pokémons para o seu time:</h2>
+    <div id="container-iniciais" class="grid-iniciais"></div>
+    <div class="preview-container">
+      <h3>Time Selecionado:</h3>
+      <div id="time-selecionado-preview" class="preview-slots"></div>
+      <button id="btn-confirmar-time" onclick="confirmarTime()" disabled>Confirmar Time</button>
+    </div>
+  </div>
+
+  <!-- Tela 2: Seleção de Área, Loja e Gerenciador de Time -->
+  <div id="tela-areas" class="tela">
+    <div class="cabecalho-usuario">
+      <span>Utilizador: <strong id="nome-usuario-hud-2">-</strong></span>
+      <div>
+        <span class="hud-ouro">💰 Ouro: <strong id="hud-ouro-valor">0</strong></span>
+        <button class="btn-sair" onclick="sairDaConta()">Sair / Trocar Conta</button>
+      </div>
+    </div>
+
+    <!-- Painel do Treinador & Equipamentos PokéTibia -->
+    <div class="secao-treinador">
+      <div class="painel-treinador-topo">
+        <h3>🧙‍♂️ Equipamentos do Treinador</h3>
+        <div class="selecao-genero">
+          <label>Gênero:</label>
+          <button class="btn-genero ativo" id="btn-genero-m" onclick="selecionarGeneroTreinador('M')">♂ Masculino</button>
+          <button class="btn-genero" id="btn-genero-f" onclick="selecionarGeneroTreinador('F')">♀ Feminino</button>
+        </div>
+      </div>
+      
+      <div class="conteiner-poketibia-slots">
+        <div class="sprite-treinador-box">
+          <img id="treinador-sprite-display" src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/trainers/1.png" alt="Treinador">
+        </div>
+
+        <div class="grid-equipamentos-poketibia">
+          <div class="slot-eq" id="slot-capacete" title="Capacete / Elmo"><span class="slot-label">🪖</span></div>
+          <div class="slot-eq" id="slot-colar" title="Colar / Amuleto"><span class="slot-label">📿</span></div>
+          <div class="slot-eq" id="slot-armadura" title="Armadura / Peitoral"><span class="slot-label">🛡️</span></div>
+          <div class="slot-eq" id="slot-arma" title="Arma / Cetro"><span class="slot-label">⚔️</span></div>
+          <div class="slot-eq" id="slot-escudo" title="Escudo / Insígnia"><span class="slot-label">🔰</span></div>
+          <div class="slot-eq" id="slot-calca" title="Calças / Pernas"><span class="slot-label">👖</span></div>
+          <div class="slot-eq" id="slot-botas" title="Botas / Calçado"><span class="slot-label">👢</span></div>
+          <div class="slot-eq" id="slot-anel" title="Anel / Anel Mágico"><span class="slot-label">💍</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Seção de Gerenciamento de Equipe / Box -->
+    <div class="secao-gerenciar-equipe">
+      <div class="topo-gerenciar-equipe">
+        <h3>🎒 Sua Equipe Atual</h3>
+        <button class="btn-gerenciar-time" onclick="abrirModalGerenciarTime()">🔄 Gerenciar Equipe / Box</button>
+      </div>
+      <div id="info-meu-time" class="meu-time-resumo"></div>
+    </div>
+
+    <!-- Seção da Loja de Pokebolas -->
+    <div class="secao-loja">
+      <h3>🛒 Loja de Pokebolas</h3>
+      <div class="grid-loja">
+        <div class="card-loja">
+          <span>🔴 Poké Ball (30% Chance)</span>
+          <p>Preço: 💰 20 ouro</p>
+          <p>Qtd: <strong id="qtd-pokeball">0</strong></p>
+          <button onclick="comprarPokebola('pokeball', 20)">Comprar</button>
+        </div>
+        <div class="card-loja">
+          <span>🔵 Great Ball (60% Chance)</span>
+          <p>Preço: 💰 50 ouro</p>
+          <p>Qtd: <strong id="qtd-greatball">0</strong></p>
+          <button onclick="comprarPokebola('greatball', 50)">Comprar</button>
+        </div>
+        <div class="card-loja">
+          <span>🟡 Ultra Ball (90% Chance)</span>
+          <p>Preço: 💰 100 ouro</p>
+          <p>Qtd: <strong id="qtd-ultraball">0</strong></p>
+          <button onclick="comprarPokebola('ultraball', 100)">Comprar</button>
+        </div>
+      </div>
+    </div>
+
+    <h2>Selecione a Área de Caça</h2>
+    <div id="grid-areas" class="grid-areas"></div>
+  </div>
+
+  <!-- Tela 3: Configuração do Script de IA -->
+  <div id="tela-estrategia" class="tela">
+    <h2 id="estrategia-titulo-area">Configuração de Estratégia</h2>
+    <div id="abas-meu-time" class="container-abas"></div>
+    <div id="container-regras-pokemons" class="lista-regras"></div>
+    <div class="acoes-estrategia">
+      <button class="btn-secundario" onclick="exibirTelaAreas()">Voltar ao Mapa</button>
+      <button class="btn-iniciar" onclick="iniciarFarmAutomatico()">Iniciar Caça Automática</button>
+    </div>
+  </div>
+
+  <!-- Tela 4: Batalha -->
+  <div id="tela-batalha" class="tela">
+    <div class="campo-batalha">
+      <div class="hud-status-inimigo">
+        <strong id="inimigo-nome">Pokémon Inimigo</strong>
+        <div id="inimigo-hp-texto"><small>HP: 100/100</small></div>
+        <div class="barra-container">
+          <div id="inimigo-hp-bar" class="barra-hp" style="width: 100%;"></div>
+        </div>
+      </div>
+
+      <div class="plataforma-inimigo"></div>
+      <div class="pokemon-inimigo-container">
+        <img id="inimigo-sprite" src="" alt="Inimigo">
+      </div>
+
+      <div class="plataforma-jogador"></div>
+      <div class="pokemon-jogador-container">
+        <img id="jogador-sprite" src="" alt="Seu Pokémon">
+      </div>
+
+      <div class="hud-status-jogador">
+        <strong id="jogador-nome">Seu Pokémon</strong>
+        <div id="jogador-hp-texto"><small>HP: 100/100</small></div>
+        <div class="barra-container">
+          <div id="jogador-hp-bar" class="barra-hp" style="width: 100%;"></div>
+        </div>
+        <div id="jogador-pp-texto" style="margin-top: 4px;"><small>PP: 100/100</small></div>
+        <div class="barra-container">
+          <div id="jogador-pp-bar" class="barra-pp" style="width: 100%;"></div>
+        </div>
+        <div id="hud-equipe-arena" style="margin-top: 5px; display: flex; gap: 4px;"></div>
+      </div>
+    </div>
+
+    <div class="painel-inferior-batalha">
+      <div id="log-batalha"></div>
+      <div id="acoes-batalha">
+        <div>Vitórias: <span id="stat-vitorias">0</span> | Ouro: 💰<span id="stat-ouro">0</span></div>
+        <button class="btn-parar" onclick="pararFarm()">Parar Caça e Voltar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Gerenciador de Equipe e Box -->
+  <div id="modal-gerenciar-time" class="modal-overlay escondido">
+    <div class="modal-conteudo">
+      <div class="modal-cabecalho">
+        <h2>📦 Gerenciador de Equipe & Box</h2>
+        <button class="btn-fechar-modal" onclick="fecharModalGerenciarTime()">✖</button>
+      </div>
+
+      <div class="modal-corpo">
+        <div class="coluna-gerenciador">
+          <h3>Equipe Ativa (Máx. 3)</h3>
+          <div id="lista-time-gerenciador" class="lista-pokemons-gerenciador"></div>
+        </div>
+        
+        <div class="coluna-gerenciador">
+          <h3>Pokémons no Box</h3>
+          <div id="lista-box-gerenciador" class="lista-pokemons-gerenciador"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
