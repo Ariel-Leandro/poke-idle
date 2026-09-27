@@ -1,4 +1,4 @@
-# Poké Idle
+# poke-idle
 
 **Poké Idle** is a web game prototype based on **Idle RPG, Auto-Battle, and incremental progression** mechanics.
 
