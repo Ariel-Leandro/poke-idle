@@ -1,0 +1,281 @@
+/* Classes de controle das telas */
+.tela {
+  display: none;
+}
+.tela.ativa {
+  display: block;
+}
+
+/* Slot de Equipamentos */
+.grid-equipamentos-poketibia {
+  display: grid;
+  grid-template-columns: repeat(4, 44px);
+  gap: 8px;
+}
+
+.slot-eq {
+  width: 44px;
+  height: 44px;
+  background-color: var(--bs-body-bg);
+  border: 1px solid var(--bs-border-color);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 1.2rem;
+  transition: border-color 0.2s, transform 0.1s;
+}
+
+.slot-eq:hover {
+  border-color: var(--bs-warning);
+  transform: scale(1.05);
+}
+
+/* Seleção do Time */
+.card-inicial {
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+.card-inicial:hover {
+  transform: translateY(-3px);
+}
+
+.card-inicial.selecionado {
+  border-color: var(--bs-warning) !important;
+  background-color: rgba(255, 203, 5, 0.1) !important;
+}
+
+.slot-preview {
+  width: 64px;
+  height: 64px;
+  background-color: var(--bs-body-bg);
+  border: 2px dashed var(--bs-border-color);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Arena de Batalha */
+#tela-batalha {
+  height: 520px;
+  position: relative;
+  border: 2px solid var(--bs-success) !important;
+  overflow: hidden;
+  background: 
+    linear-gradient(to bottom, transparent 60%, rgba(34, 139, 34, 0.4) 100%),
+    linear-gradient(to bottom, #7ce8ff 0%, #a1f0ff 35%, #88d052 35%, #4caf50 65%, #2e7d32 100%);
+}
+
+.campo-batalha {
+  width: 100%;
+  height: 340px;
+  position: relative;
+}
+
+.plataforma-inimigo {
+  position: absolute;
+  top: 100px;
+  right: 60px;
+  width: 220px;
+  height: 60px;
+  background: radial-gradient(ellipse at center, #388e3c 0%, #1b5e20 70%, transparent 100%);
+  border-radius: 50%;
+}
+
+.pokemon-inimigo-container {
+  position: absolute;
+  top: 30px;
+  right: 100px;
+  z-index: 2;
+}
+
+.pokemon-inimigo-container img {
+  width: 130px;
+  height: 130px;
+  object-fit: contain;
+}
+
+.plataforma-jogador {
+  position: absolute;
+  bottom: 10px;
+  left: 40px;
+  width: 260px;
+  height: 70px;
+  background: radial-gradient(ellipse at center, #4caf50 0%, #2e7d32 70%, transparent 100%);
+  border-radius: 50%;
+}
+
+.pokemon-jogador-container {
+  position: absolute;
+  bottom: 20px;
+  left: 90px;
+  z-index: 3;
+}
+
+.pokemon-jogador-container img {
+  width: 150px;
+  height: 150px;
+  object-fit: contain;
+}
+
+.hud-status-inimigo {
+  position: absolute;
+  top: 15px;
+  left: 20px;
+  background: rgba(0, 0, 0, 0.8);
+  padding: 8px 12px;
+  min-width: 180px;
+  z-index: 10;
+}
+
+.hud-status-jogador {
+  position: absolute;
+  bottom: 15px;
+  right: 20px;
+  background: rgba(0, 0, 0, 0.8);
+  padding: 8px 12px;
+  min-width: 200px;
+  z-index: 10;
+}
+
+.icon-pkmn-arena {
+  width: 24px;
+  height: 24px;
+  opacity: 0.4;
+}
+
+.icon-pkmn-arena.ativo {
+  opacity: 1;
+  border-bottom: 2px solid var(--bs-warning);
+}
+
+.icon-pkmn-arena.derrotado {
+  filter: grayscale(100%);
+  opacity: 0.2;
+}
+
+.painel-inferior-batalha {
+  width: 100%;
+  height: 180px;
+  background: #121212;
+  display: flex;
+  flex-direction: column;
+}
+
+#log-batalha {
+  flex: 1;
+  overflow-y: auto;
+  font-size: 13px;
+  background: #000;
+}
+
+/* ESTILOS DA POKÉDEX */
+.modal-pokedex-theme {
+  background-color: #0b0f19;
+  border-color: #1e293b !important;
+}
+
+.pokedex-stat-card {
+  background: #111827;
+  border: 1px solid #1f2937;
+  border-radius: 8px;
+  padding: 6px;
+}
+
+.pokedex-grid-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(85px, 1fr));
+  gap: 10px;
+  max-height: 420px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.pokedex-card-slot {
+  background: #111827;
+  border: 1px solid #1f2937;
+  border-radius: 8px;
+  padding: 6px;
+  text-align: center;
+  position: relative;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.pokedex-card-slot:hover {
+  border-color: #f59e0b;
+  transform: translateY(-2px);
+}
+
+.pokedex-card-slot img {
+  width: 50px;
+  height: 50px;
+  object-fit: contain;
+}
+
+.pokedex-card-slot.bloqueado img {
+  filter: brightness(0);
+  opacity: 0.4;
+}
+
+.pokedex-card-slot .badge-status {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  font-size: 10px;
+}
+
+.pokedex-card-slot .numero-pkmn {
+  font-size: 10px;
+  color: #9ca3af;
+  display: block;
+}
+
+.pokedex-card-slot .nome-pkmn {
+  font-size: 11px;
+  font-weight: bold;
+  color: #f3f4f6;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+}
+
+.pokedex-sprite-box {
+  background: #111827;
+  border: 1px solid #374151;
+  border-radius: 8px;
+  padding: 10px;
+}
+
+.grid-defesas-tipos {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
+  gap: 6px;
+  text-align: center;
+}
+
+.defesa-tipo-box {
+  background: #1f2937;
+  border-radius: 4px;
+  padding: 3px;
+  font-size: 10px;
+}
+
+.defesa-tipo-box .tipo-tag {
+  font-weight: bold;
+  display: block;
+  border-radius: 2px;
+  padding: 1px 0;
+  color: #fff;
+}
+
+.defesa-tipo-box .multiplicador {
+  display: block;
+  font-weight: bold;
+  margin-top: 2px;
+}
