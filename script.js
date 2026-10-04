@@ -30,6 +30,13 @@ const tabelaTipos = {
   Psiquico: { Luta: 2.0, Ven: 2.0, Psi: 0.5 }
 };
 
+const mapeamentoTiposPt = {
+  normal: "Normal", fire: "Fogo", water: "Agua", grass: "Planta",
+  electric: "Eletrico", flying: "Voador", poison: "Veneno", bug: "Inseto",
+  rock: "Pedra", psychic: "Psiquico", ground: "Terra", ice: "Gelo",
+  dragon: "Dragao", ghost: "Fantasma", fighting: "Luta", steel: "Aco", fairy: "Fada"
+};
+
 const areas = [
   { id: 1, nome: "Rota 1 & Floresta de Viridian", minId: 1, maxId: 25 },
   { id: 2, nome: "Caverna Mt. Moon & Rota 4", minId: 26, maxId: 50 },
@@ -59,14 +66,8 @@ function obterModal(id) {
 }
 
 async function iniciarJogo() {
-  try {
-    const resposta = await fetch('base_de_pokemons.json');
-    if (resposta.ok) basePokemons = await resposta.json();
-  } catch (e) {
-    console.warn("Base local carregada.");
-  }
+  await carregarBasePokeAPI();
 
-  preencherBaseFaltante();
   const modalTime = document.getElementById('modal-gerenciar-time');
   if (modalTime && !modalTime.dataset.bound) {
     modalTime.dataset.bound = '1';
@@ -80,7 +81,56 @@ async function iniciarJogo() {
   verificarSessaoAtiva();
 }
 
-/* SISTEMA DO TREINADOR */
+/* CARREGAMENTO DE DADOS DA POKÉAPI (DO ÚLTIMO CÓDIGO) */
+async function carregarBasePokeAPI() {
+  try {
+    const response = await fetch('https://pokeapi.co/api/v2/pokemon?limit=151');
+    const data = await response.json();
+    
+    const promessasDetalhes = data.results.map(async (item) => {
+      const res = await fetch(item.url);
+      return await res.json();
+    });
+
+    const listaDetalhada = await Promise.all(promessasDetalhes);
+
+    listaDetalhada.forEach(poke => {
+      const statsObj = {};
+      poke.stats.forEach(s => {
+        statsObj[s.stat.name] = s.base_stat;
+      });
+
+      const tipos = poke.types.map(t => mapeamentoTiposPt[t.type.name] || t.type.name);
+
+      basePokemons[poke.id] = {
+        id: poke.id,
+        nome: poke.name.charAt(0).toUpperCase() + poke.name.slice(1),
+        tipos: tipos,
+        atributosBase: {
+          pontosVida: statsObj['hp'] || 45,
+          ataque: statsObj['attack'] || 49,
+          defesa: statsObj['defense'] || 49,
+          velocidade: statsObj['speed'] || 45
+        },
+        golpesDisponiveis: obterGolpesPadraoPorTipo(tipos[0]),
+        caminhoSprite: poke.sprites.other['official-artwork'].front_default || poke.sprites.front_default
+      };
+    });
+  } catch (e) {
+    console.warn("Falha ao conectar com PokeAPI. Usando base de reserva local.", e);
+    preencherBaseFaltante();
+  }
+}
+
+function obterGolpesPadraoPorTipo(tipoPrincipal) {
+  switch (tipoPrincipal) {
+    case 'Planta': return ["investida", "chicote_de_cipo", "folha_navalha", "mordida"];
+    case 'Fogo': return ["arranha", "brasa", "lanca_chamas", "mordida"];
+    case 'Agua': return ["investida", "pistola_de_agua", "jacto_de_agua", "mordida"];
+    default: return ["investida", "mordida", "arranha"];
+  }
+}
+
 function selecionarGeneroTreinador(genero) {
   generoTreinador = genero;
   const imgTreinador = document.getElementById('treinador-sprite-display');
@@ -100,7 +150,6 @@ function selecionarGeneroTreinador(genero) {
   salvarDadosProgresso();
 }
 
-/* AUTENTICAÇÃO E LOJA */
 function mudarAbaAuth(aba) {
   document.getElementById('msg-auth').innerText = '';
   const btnEntrar = document.getElementById('aba-entrar');
@@ -265,7 +314,6 @@ function atualizarHUDLoja() {
   document.getElementById('qtd-ultraball').innerText = inventario.ultraball;
 }
 
-/* SISTEMA DE GERENCIAMENTO DE TIME E BOX */
 function abrirModalGerenciarTime() {
   renderizarGerenciadorTime();
   obterModal('modal-gerenciar-time').show();
@@ -282,7 +330,6 @@ function renderizarGerenciadorTime() {
   containerTime.innerHTML = '';
   containerBox.innerHTML = '';
 
-  // Equipe
   meuTime.forEach((pkmn, idx) => {
     const card = document.createElement('div');
     card.className = 'd-flex align-items-center gap-2 p-2 rounded border border-secondary bg-dark';
@@ -300,7 +347,6 @@ function renderizarGerenciadorTime() {
     containerTime.appendChild(card);
   });
 
-  // Box
   if (meuBox.length === 0) {
     containerBox.innerHTML = '<p class="text-muted p-2 mb-0">Nenhum Pokémon no box.</p>';
   } else {
@@ -340,31 +386,19 @@ function moverBoxParaTime(index) {
   renderizarGerenciadorTime();
 }
 
-/* LÓGICA DE BATALHA E FARM */
 function preencherBaseFaltante() {
-  const iniciaisClassicos = {
-    1: { id: 1, nome: "Bulbasaur", tipos: ["Planta", "Veneno"], atributosBase: { pontosVida: 45, ataque: 49, defesa: 49, velocidade: 45 }, golpesDisponiveis: ["investida", "chicote_de_cipo", "folha_navalha", "mordida"] },
-    4: { id: 4, nome: "Charmander", tipos: ["Fogo"], atributosBase: { pontosVida: 39, ataque: 52, defesa: 43, velocidade: 65 }, golpesDisponiveis: ["arranha", "brasa", "lanca_chamas", "mordida"] },
-    7: { id: 7, nome: "Squirtle", tipos: ["Agua"], atributosBase: { pontosVida: 44, ataque: 48, defesa: 65, velocidade: 43 }, golpesDisponiveis: ["investida", "pistola_de_agua", "jacto_de_agua", "mordida"] },
-    16: { id: 16, nome: "Pidgey", tipos: ["Normal", "Voador"], atributosBase: { pontosVida: 40, ataque: 45, defesa: 40, velocidade: 56 }, golpesDisponiveis: ["investida", "arranha"] },
-    25: { id: 25, nome: "Pikachu", tipos: ["Eletrico"], atributosBase: { pontosVida: 35, ataque: 55, defesa: 40, velocidade: 90 }, golpesDisponiveis: ["investida", "mordida"] }
-  };
-
   const tiposPossiveis = ["Normal", "Planta", "Veneno", "Fogo", "Voador", "Agua", "Inseto", "Eletrico", "Psiquico", "Pedra"];
 
   for (let i = 1; i <= 151; i++) {
     if (!basePokemons[i]) {
-      if (iniciaisClassicos[i]) {
-        basePokemons[i] = iniciaisClassicos[i];
-      } else {
-        basePokemons[i] = {
-          id: i,
-          nome: `Pokémon #${i}`,
-          tipos: [tiposPossiveis[i % tiposPossiveis.length]],
-          atributosBase: { pontosVida: 45 + Math.floor(i/3), ataque: 45 + Math.floor(i/3), defesa: 45, velocidade: 45 },
-          golpesDisponiveis: ["investida", "mordida"]
-        };
-      }
+      basePokemons[i] = {
+        id: i,
+        nome: `Pokémon #${i}`,
+        tipos: [tiposPossiveis[i % tiposPossiveis.length]],
+        atributosBase: { pontosVida: 45 + Math.floor(i/3), ataque: 45 + Math.floor(i/3), defesa: 45, velocidade: 45 },
+        golpesDisponiveis: ["investida", "mordida"],
+        caminhoSprite: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${i}.png`
+      };
     }
   }
 }
@@ -401,10 +435,11 @@ function exibirTelaEscolhaTime() {
 
   selecoesDisponiveis.forEach(id => {
     const p = basePokemons[id];
+    if (!p) return;
     const card = document.createElement('div');
     card.className = 'card-inicial';
     card.dataset.id = id;
-    const sprite = p.caminhoSprite || `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png`;
+    const sprite = p.caminhoSprite;
 
     card.innerHTML = `
       <img src="${sprite}" alt="${p.nome}">
@@ -556,7 +591,7 @@ function renderizarFormularioEstrategia() {
     card.className = 'card card-regra-pkmn bg-body-tertiary border-secondary mb-2';
     card.dataset.inimigoId = idInimigo;
 
-    const sprite = pInimigo.caminhoSprite || `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${idInimigo}.png`;
+    const sprite = pInimigo.caminhoSprite;
 
     card.innerHTML = `
       <div class="card-body p-3">
@@ -735,7 +770,6 @@ function processarVitoriaInfinita() {
   registrarAvistamento(pokemonInimigo.id);
   registrarAbate(pokemonInimigo.id);
 
-  // Cálculo de XP e Ouro
   const diffNivel = pokemonInimigo.nivel - meuPokemon.nivel;
   const multiplicadorDiff = Math.max(0.5, 1 + (diffNivel * 0.1));
   const bonusPokedex = temBonusXpPokedex(pokemonInimigo.id) ? 1.25 : 1;
@@ -750,7 +784,6 @@ function processarVitoriaInfinita() {
   const extraXp = bonusPokedex > 1 ? ' <span class="text-warning">(Pokédex +25%)</span>' : '';
   log.innerHTML += `<p class="text-success mb-1">${pokemonInimigo.nome} foi derrotado! <strong>+${xpGanha} XP</strong>${extraXp} e 💰 <strong>+${ouroGanho} ouro</strong>!</p>`;
 
-  // Sistema de Pokebola Automática
   const chaveRegra = `${meuPokemon.id}_${pokemonInimigo.id}`;
   const config = scriptAutomacao[chaveRegra];
   const pokebolaTipo = config?.pokebola || "nenhuma";
@@ -780,7 +813,6 @@ function processarVitoriaInfinita() {
     }
   }
 
-  // Level Up
   if (meuPokemon.xp >= meuPokemon.xpProximoNivel) {
     meuPokemon.nivel++;
     meuPokemon.xp -= meuPokemon.xpProximoNivel;
@@ -886,6 +918,7 @@ function atacar(atacante, defensor, golpe) {
   log.scrollTop = log.scrollHeight;
 }
 
+/* REFATORAÇÃO DOS STATUS BASEADOS NA POKÉAPI */
 function instanciarPokemon(dados, nivel = 10) {
   const multiplicadorNivel = 1 + (nivel - 1) * 0.1;
   const hpCalculado = Math.floor((dados.atributosBase.pontosVida * 2) * multiplicadorNivel);
@@ -946,9 +979,10 @@ function atualizarStatsFarmHUD() {
 }
 
 const CORES_TIPO = {
-  Normal: '#9ca3af', Fogo: '#ef4444', Agua: '#3b82f6', Planta: '#22c55e',
-  Eletrico: '#eab308', Voador: '#93c5fd', Veneno: '#a855f7', Inseto: '#84cc16',
-  Pedra: '#a8a29e', Psiquico: '#ec4899'
+  Normal: '#949488', Fogo: '#ff4422', Agua: '#3399ff', Planta: '#77cc55',
+  Eletrico: '#ffcc33', Voador: '#8899ff', Veneno: '#aa5599', Inseto: '#aabb22',
+  Pedra: '#bba666', Psiquico: '#ff5599', Terra: '#dde53b', Gelo: '#66ccff',
+  Dragao: '#766bbe', Fantasma: '#6666bb', Luta: '#bb5544', Aco: '#aaaabb', Fada: '#ee99cc'
 };
 
 function entradaPokedex(id) {
@@ -993,7 +1027,7 @@ function raridadePokedex(id) {
 
 function badgeTipoHtml(tipo) {
   const cor = CORES_TIPO[tipo] || '#6b7280';
-  return `<span class="badge" style="background-color:${cor};">${tipo}</span>`;
+  return `<span class="badge px-2 py-1 text-uppercase me-1" style="background-color:${cor}; color:#fff;">${tipo}</span>`;
 }
 
 function abrirModalPokedex() {
@@ -1005,6 +1039,7 @@ function filtrarPokedex() {
   renderizarPokedex();
 }
 
+/* RENDERIZAÇÃO REFATORADA BASEADA NO ÚLTIMO CÓDIGO ANEXADO */
 function renderizarPokedex() {
   const busca = (document.getElementById('pokedex-busca').value || '').trim().toLowerCase();
   const filtroTipo = document.getElementById('pokedex-filtro-tipo').value;
@@ -1029,14 +1064,17 @@ function renderizarPokedex() {
     const nome = dados.nome || `Pokémon #${id}`;
     if (busca && !nome.toLowerCase().includes(busca) && !String(id).includes(busca)) continue;
 
-    const sprite = dados.caminhoSprite || `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png`;
+    const sprite = dados.caminhoSprite;
     const slot = document.createElement('div');
     slot.className = `pokedex-card-slot ${desbloqueado ? '' : 'bloqueado'}`;
     slot.innerHTML = `
       ${capturado ? '<span class="badge-status badge bg-success">✓</span>' : ''}
-      <img src="${sprite}" alt="${nome}">
+      <div class="pokemon-img-container mb-2">
+        <img src="${sprite}" alt="${nome}" style="max-width: 70px; max-height: 70px;">
+      </div>
       <span class="numero-pkmn">#${String(id).padStart(3, '0')}</span>
       <span class="nome-pkmn">${desbloqueado ? nome : '???'}</span>
+      <div class="mt-1">${desbloqueado ? (dados.tipos || []).map(badgeTipoHtml).join('') : ''}</div>
     `;
     if (desbloqueado) {
       slot.onclick = () => abrirDetalhePokedex(id);
@@ -1055,7 +1093,7 @@ function abrirDetalhePokedex(id) {
   if (!dados) return;
 
   const entrada = entradaPokedex(id);
-  const sprite = dados.caminhoSprite || `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png`;
+  const sprite = dados.caminhoSprite;
   const abates = entrada.abates || 0;
   const progresso = Math.min(100, abates);
 
@@ -1097,9 +1135,12 @@ function abrirDetalhePokedex(id) {
   ];
   const total = stats.reduce((acc, [, v]) => acc + (v || 0), 0);
   document.getElementById('detalhe-pkmn-stats').innerHTML = stats.map(([nome, valor]) => `
-    <div class="d-flex justify-content-between small">
-      <span class="text-muted">${nome}</span>
-      <strong>${valor || 0}</strong>
+    <div class="d-flex justify-content-between align-items-center mb-1">
+      <span class="text-muted small">${nome}</span>
+      <div class="progress flex-grow-1 mx-2" style="height: 6px;">
+        <div class="progress-bar bg-primary" style="width: ${Math.min(100, (valor/150)*100)}%;"></div>
+      </div>
+      <strong class="small">${valor || 0}</strong>
     </div>
   `).join('');
   document.getElementById('detalhe-pkmn-stat-total').innerText = String(total);
